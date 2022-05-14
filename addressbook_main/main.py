@@ -25,9 +25,8 @@ def get_db():
 def add_address(request:AddressBook,response: Response,db: Session = Depends(get_db)):
     try:
         data ={}
-
         new_address = models.AddressBook(name = request.name,address = request.address,pin = request.pin,
-                        phone = request.phone,long = request.long,lat = request.lat,distance = request.distance)
+                        phone = request.phone,long = request.long,lat = request.lat)
         db.add(new_address)
         db.commit()
         db.refresh(new_address)
@@ -84,7 +83,6 @@ def update_address(id,request:AddressBook,db : Session = Depends(get_db)):
         data.phone = request.phone
         data.long = request.long
         data.lat = request.lat
-        data.distance = request.distance
         db.commit()
         db.refresh(data)
         return data
@@ -92,10 +90,13 @@ def update_address(id,request:AddressBook,db : Session = Depends(get_db)):
         return {"status" : "failed to update data!!"}
 
 @app.get("/fetch-nearby/",status_code=status.HTTP_200_OK)
-def address_finder(distance,db : Session = Depends(get_db)):
+def address_finder(distance:int,long:int,lat:int,db : Session = Depends(get_db)):
     try:
-        for i in db.query(models.AddressBook):
-            all_address = db.query(models.AddressBook).filter(models.AddressBook.distance < distance).all()
-        return all_address
+        address_list = []
+        for i in db.query(models.AddressBook).all():
+            d = (lat -i.lat)*(lat -i.lat) + (long -i.long)*(long -i.long)
+            if d < (distance*distance):
+                address_list.append(i)
+        return address_list
     except Exception as e:
-        return {"status" : "failed to load data from database"}
+        return {"status" : f"failed to load data from database{e}"}

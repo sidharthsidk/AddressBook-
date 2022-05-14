@@ -12,5 +12,4 @@ class AddressBook(Base):
     phone = Column(Integer)
     long = Column(Float)
     lat = Column(Float)
-    distance = Column(Integer)
 
