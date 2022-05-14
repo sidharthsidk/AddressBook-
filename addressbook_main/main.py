@@ -1,18 +1,17 @@
 from sqlite3 import dbapi2
-from fastapi import Depends, FastAPI, Query,status,Response
-from . import models, schemas
-from .schemas import AddressBook,ShowAddressBook
-from .database import SessionLocal, engine, Base
+
+from fastapi import Depends, FastAPI, Query, Response, status
+from geopy.geocoders import Nominatim
 from sqlalchemy.orm import Session
 
+from . import models, schemas
+from .database import Base, SessionLocal, engine
+from .schemas import AddressBook, ShowAddressBook
 
-from geopy.geocoders import Nominatim
-
- 
 models.Base.metadata.create_all(engine)
 
 app = FastAPI()
-
+#get db
 def get_db():
     db = SessionLocal()
     try:
@@ -20,7 +19,7 @@ def get_db():
     finally:
         db.close()
 
-
+#create address api
 @app.post('/add-address',status_code=status.HTTP_201_CREATED)
 def add_address(request:AddressBook,response: Response,db: Session = Depends(get_db)):
     try:
@@ -41,7 +40,7 @@ def add_address(request:AddressBook,response: Response,db: Session = Depends(get
         response.status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         return data
         
-
+#delete address api
 @app.delete('/delete-address/{id}',status_code=status.HTTP_200_OK)
 def deleteaddress(id,db: Session = Depends(get_db)):
     try:
@@ -56,7 +55,7 @@ def deleteaddress(id,db: Session = Depends(get_db)):
         data["message"] = "Failed to delete address"
         return data
 
-
+#showing all address in the db
 @app.get("/",status_code=status.HTTP_200_OK)
 def all_address(db : Session = Depends(get_db)):
     try:
@@ -64,7 +63,7 @@ def all_address(db : Session = Depends(get_db)):
         return all_address
     except Exception as e:
         return {"status" : "failed to load data from database"}
-
+#adress details for single address
 @app.get("/address-details/{id}",status_code=status.HTTP_200_OK,response_model=schemas.ShowAddressBook)
 def address_details(id,db : Session = Depends(get_db)):
     try:
@@ -72,7 +71,7 @@ def address_details(id,db : Session = Depends(get_db)):
         return all_address
     except Exception as e:
         return {"status" : "failed to load data from database"}
-
+#updating address
 @app.put("/update-address/{id}",status_code=status.HTTP_200_OK)
 def update_address(id,request:AddressBook,db : Session = Depends(get_db)):
     try:
@@ -88,7 +87,7 @@ def update_address(id,request:AddressBook,db : Session = Depends(get_db)):
         return data
     except Exception as e:
         return {"status" : "failed to update data!!"}
-
+#searching for address within distance and coordinates
 @app.get("/fetch-nearby/",status_code=status.HTTP_200_OK)
 def address_finder(distance:int,long:int,lat:int,db : Session = Depends(get_db)):
     try:
